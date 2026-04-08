@@ -193,6 +193,18 @@ export default function Home() {
     setOptions((current) => [...current, createEmptyOption()]);
   }
 
+  function handleCreateOption(option: Omit<FlightOption, "id">) {
+    const cleanName = option.name.trim();
+    setOptions((current) => [
+      {
+        ...option,
+        id: createId("option"),
+        name: cleanName.length > 0 ? cleanName : `Plano ${current.length + 1}`,
+      },
+      ...current,
+    ]);
+  }
+
   function handleClearOptions() {
     setOptions([]);
   }
@@ -257,7 +269,15 @@ export default function Home() {
         <div className="space-y-6">
           <DirectCompare
             options={filteredOptions}
+            milePrices={milePrices}
+            onMilePriceChange={(company, value) =>
+              setMilePrices((current) => ({
+                ...current,
+                [company]: toNumber(value),
+              }))
+            }
             onAddOption={handleAddOption}
+            onCreateOption={handleCreateOption}
             onTextChange={handleOptionTextChange}
             onCompanyChange={handleOptionCompanyChange}
             onNumberChange={handleOptionNumberChange}

@@ -4,11 +4,17 @@ import type {
   CalculatedFlightOption,
   CommissionType,
   CompanyKey,
+  FlightOption,
+  MilePrices,
 } from "@/types";
+import { useState } from "react";
 
 type DirectCompareProps = {
   options: CalculatedFlightOption[];
+  milePrices: MilePrices;
+  onMilePriceChange: (company: CompanyKey, value: string) => void;
   onAddOption: () => void;
+  onCreateOption: (option: Omit<FlightOption, "id">) => void;
   onTextChange: (id: string, field: "name", value: string) => void;
   onCompanyChange: (id: string, company: CompanyKey) => void;
   onNumberChange: (
@@ -22,14 +28,46 @@ type DirectCompareProps = {
 
 export function DirectCompare({
   options,
+  milePrices,
+  onMilePriceChange,
   onAddOption,
+  onCreateOption,
   onTextChange,
   onCompanyChange,
   onNumberChange,
   onCommissionTypeChange,
   onRemove,
 }: DirectCompareProps) {
+  const [newOption, setNewOption] = useState<Omit<FlightOption, "id">>({
+    name: "",
+    company: "smiles",
+    miles: 0,
+    cashAmount: 0,
+    saleAmount: 0,
+    commissionType: "fixed",
+    commissionValue: 0,
+  });
   const bestOption = options[0] ?? null;
+
+  function toNumber(value: string): number {
+    const parsed = Number(value.replace(",", "."));
+    return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+  }
+
+  function handleCreateOption() {
+    onCreateOption({
+      ...newOption,
+      name: newOption.name.trim(),
+    });
+    setNewOption((current) => ({
+      ...current,
+      name: "",
+      miles: 0,
+      cashAmount: 0,
+      saleAmount: 0,
+      commissionValue: 0,
+    }));
+  }
 
   return (
     <section className="rounded-[28px] border border-slate-200/80 bg-white/95 p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/90 sm:p-5">
@@ -67,6 +105,146 @@ export function DirectCompare({
             </div>
           </div>
         ) : null}
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-700 dark:bg-slate-800/70">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600 dark:text-slate-300">
+          Valor do milheiro por companhia (carregado automaticamente e editavel)
+        </p>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          {COMPANY_OPTIONS.map((company) => (
+            <label key={company.key} className="flex flex-col gap-1">
+              <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                {company.label}
+              </span>
+              <div className="relative">
+                <span className="pointer-events-none absolute inset-y-0 left-3 inline-flex items-center text-xs text-slate-500 dark:text-slate-400">
+                  R$
+                </span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={milePrices[company.key]}
+                  onChange={(event) => onMilePriceChange(company.key, event.target.value)}
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-8 pr-3 text-sm outline-none focus:border-sky-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                />
+              </div>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-700 dark:bg-slate-800/70">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600 dark:text-slate-300">
+          Formulario rapido para iniciar comparacao
+        </p>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <input
+            type="text"
+            value={newOption.name}
+            onChange={(event) =>
+              setNewOption((current) => ({ ...current, name: event.target.value }))
+            }
+            placeholder="Nome do plano"
+            className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-sky-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+          />
+          <select
+            value={newOption.company}
+            onChange={(event) =>
+              setNewOption((current) => ({
+                ...current,
+                company: event.target.value as CompanyKey,
+              }))
+            }
+            className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-sky-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+          >
+            {COMPANY_OPTIONS.map((company) => (
+              <option key={company.key} value={company.key}>
+                {company.label}
+              </option>
+            ))}
+          </select>
+          <input
+            type="number"
+            min="0"
+            step="1"
+            value={newOption.miles === 0 ? "" : newOption.miles}
+            onChange={(event) =>
+              setNewOption((current) => ({
+                ...current,
+                miles: toNumber(event.target.value),
+              }))
+            }
+            placeholder="Pontos"
+            className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-sky-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+          />
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={newOption.cashAmount === 0 ? "" : newOption.cashAmount}
+            onChange={(event) =>
+              setNewOption((current) => ({
+                ...current,
+                cashAmount: toNumber(event.target.value),
+              }))
+            }
+            placeholder="Taxa (R$)"
+            className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-sky-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+          />
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={newOption.saleAmount === 0 ? "" : newOption.saleAmount}
+            onChange={(event) =>
+              setNewOption((current) => ({
+                ...current,
+                saleAmount: toNumber(event.target.value),
+              }))
+            }
+            placeholder="Venda (R$)"
+            className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-sky-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+          />
+          <select
+            value={newOption.commissionType}
+            onChange={(event) =>
+              setNewOption((current) => ({
+                ...current,
+                commissionType: event.target.value as CommissionType,
+              }))
+            }
+            className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-sky-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+          >
+            {COMMISSION_TYPE_OPTIONS.map((type) => (
+              <option key={type.value} value={type.value}>
+                {type.label}
+              </option>
+            ))}
+          </select>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={newOption.commissionValue === 0 ? "" : newOption.commissionValue}
+            onChange={(event) =>
+              setNewOption((current) => ({
+                ...current,
+                commissionValue: toNumber(event.target.value),
+              }))
+            }
+            placeholder="Comissao"
+            className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus:border-sky-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+          />
+          <button
+            type="button"
+            onClick={handleCreateOption}
+            className="h-10 rounded-xl bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-sky-600 dark:hover:bg-sky-500"
+          >
+            Adicionar plano
+          </button>
+        </div>
       </div>
 
       <div className="mt-4 space-y-3">
