@@ -1,14 +1,13 @@
 "use client";
 
 import { ActionBar } from "@/components/action-bar";
+import { DirectCompare } from "@/components/direct-compare";
 import { FilterBar } from "@/components/filter-bar";
 import { FormulaSection } from "@/components/formula-section";
 import { HistorySection } from "@/components/history-section";
 import { MilheiroForm } from "@/components/milheiro-form";
-import { OptionsList } from "@/components/options-list";
 import { PageHeader } from "@/components/page-header";
 import { QuickCalculator } from "@/components/quick-calculator";
-import { RankingList } from "@/components/ranking-list";
 import { buildHistorySummary, calculateOption, sortOptionsByNetProfit } from "@/lib/calculations";
 import { exportHistoryToCSV, exportOptionsToCSV } from "@/lib/csv";
 import {
@@ -45,14 +44,18 @@ import type {
 } from "@/types";
 import { useEffect, useMemo, useState } from "react";
 
+type ThemeMode = "light" | "dark";
+const THEME_STORAGE_KEY = "calculadora-milhas:theme";
+
 function toNumber(value: string): number {
   const parsed = Number(value.replace(",", "."));
   return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
 }
 
 export default function Home() {
+  const defaultOptions = useMemo(() => getDefaultOptions(), []);
   const [milePrices, setMilePrices] = useState<MilePrices>(getDefaultMilePrices);
-  const [options, setOptions] = useState<FlightOption[]>(getDefaultOptions);
+  const [options, setOptions] = useState<FlightOption[]>(defaultOptions);
   const [quickCalculator, setQuickCalculator] = useState<QuickCalculatorState>(
     getDefaultQuickCalculator,
   );
@@ -60,6 +63,8 @@ export default function Home() {
   const [history, setHistory] = useState<HistorySnapshot[]>([]);
   const [snapshotName, setSnapshotName] = useState("");
   const [hasLoadedStorage, setHasLoadedStorage] = useState(false);
+  const [hasLoadedTheme, setHasLoadedTheme] = useState(false);
+  const [themeMode, setThemeMode] = useState<ThemeMode>("light");
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -85,6 +90,36 @@ export default function Home() {
     saveFilters(filters);
     saveHistory(history);
   }, [filters, hasLoadedStorage, history, milePrices, options, quickCalculator]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+    const nextTheme: ThemeMode =
+      storedTheme === "dark" || storedTheme === "light"
+        ? storedTheme
+        : window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light";
+
+    const timer = window.setTimeout(() => {
+      setThemeMode(nextTheme);
+      setHasLoadedTheme(true);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoadedTheme || typeof document === "undefined") {
+      return;
+    }
+
+    document.documentElement.classList.toggle("dark", themeMode === "dark");
+    window.localStorage.setItem(THEME_STORAGE_KEY, themeMode);
+  }, [hasLoadedTheme, themeMode]);
 
   const calculatedOptions = useMemo(() => {
     return sortOptionsByNetProfit(
@@ -155,7 +190,7 @@ export default function Home() {
   }
 
   function handleAddOption() {
-    setOptions((current) => [...current, createEmptyOption(current.length + 1)]);
+    setOptions((current) => [...current, createEmptyOption()]);
   }
 
   function handleClearOptions() {
@@ -217,9 +252,21 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen text-slate-900 transition-colors dark:text-slate-100">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="space-y-6">
+          <DirectCompare
+            options={filteredOptions}
+            onAddOption={handleAddOption}
+            onTextChange={handleOptionTextChange}
+            onCompanyChange={handleOptionCompanyChange}
+            onNumberChange={handleOptionNumberChange}
+            onCommissionTypeChange={handleOptionCommissionTypeChange}
+            onRemove={(id) =>
+              setOptions((current) => current.filter((option) => option.id !== id))
+            }
+          />
+
           <PageHeader
             bestOptionName={activeSummary.bestOption?.name ?? null}
             bestOptionNetProfit={activeSummary.bestOption?.netProfit ?? 0}
@@ -229,6 +276,10 @@ export default function Home() {
             isFiltered={isFiltered}
             visibleCount={filteredOptions.length}
             totalCount={calculatedOptions.length}
+            themeMode={themeMode}
+            onToggleTheme={() =>
+              setThemeMode((current) => (current === "light" ? "dark" : "light"))
+            }
           />
 
           <MilheiroForm
@@ -266,19 +317,6 @@ export default function Home() {
             canExportOptions={filteredOptions.length > 0}
             canExportHistory={history.length > 0}
           />
-
-          <OptionsList
-            options={filteredOptions}
-            onTextChange={handleOptionTextChange}
-            onCompanyChange={handleOptionCompanyChange}
-            onNumberChange={handleOptionNumberChange}
-            onCommissionTypeChange={handleOptionCommissionTypeChange}
-            onRemove={(id) =>
-              setOptions((current) => current.filter((option) => option.id !== id))
-            }
-          />
-
-          <RankingList options={filteredOptions} />
 
           <QuickCalculator
             value={quickCalculator}

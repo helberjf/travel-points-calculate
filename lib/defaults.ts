@@ -24,38 +24,7 @@ export function getDefaultMilePrices(): MilePrices {
 }
 
 export function getDefaultOptions(): FlightOption[] {
-  return [
-    {
-      id: "option-1",
-      name: "Opção 1",
-      company: "smiles",
-      miles: 46000,
-      cashAmount: 0,
-      saleAmount: 800,
-      commissionType: "fixed",
-      commissionValue: 0,
-    },
-    {
-      id: "option-2",
-      name: "Opção 2",
-      company: "smiles",
-      miles: 8280,
-      cashAmount: 690,
-      saleAmount: 800,
-      commissionType: "fixed",
-      commissionValue: 0,
-    },
-    {
-      id: "option-3",
-      name: "Opção 3",
-      company: "latam",
-      miles: 24183,
-      cashAmount: 50,
-      saleAmount: 800,
-      commissionType: "fixed",
-      commissionValue: 0,
-    },
-  ];
+  return [];
 }
 
 export function getDefaultQuickCalculator(): QuickCalculatorState {
@@ -81,10 +50,10 @@ export function getDefaultHistory(): HistorySnapshot[] {
   return [];
 }
 
-export function createEmptyOption(position: number): FlightOption {
+export function createEmptyOption(): FlightOption {
   return {
     id: createId("option"),
-    name: `Opção ${position}`,
+    name: "",
     company: "smiles",
     miles: 0,
     cashAmount: 0,

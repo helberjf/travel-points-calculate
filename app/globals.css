@@ -1,8 +1,14 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
   --background: #f1f5f9;
   --foreground: #0f172a;
+}
+
+html.dark {
+  --background: #020617;
+  --foreground: #e2e8f0;
 }
 
 @theme inline {
@@ -28,6 +34,13 @@ body {
     linear-gradient(180deg, #ffffff 0%, #f8fafc 52%, var(--background) 100%);
   color: var(--foreground);
   font-family: var(--font-manrope), sans-serif;
+  transition: background 180ms ease, color 180ms ease;
+}
+
+html.dark body {
+  background:
+    radial-gradient(circle at top, rgba(56, 189, 248, 0.12), transparent 34rem),
+    linear-gradient(180deg, #020617 0%, #0b1221 52%, var(--background) 100%);
 }
 
 ::selection {
