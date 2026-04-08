@@ -4,10 +4,16 @@ import { ActionBar } from "@/components/action-bar";
 import { DirectCompare } from "@/components/direct-compare";
 import { FilterBar } from "@/components/filter-bar";
 import { FormulaSection } from "@/components/formula-section";
+import { FuelConsumption } from "@/components/fuel-consumption";
 import { HistorySection } from "@/components/history-section";
+import { MedicationsAgenda } from "@/components/medications-agenda";
 import { MilheiroForm } from "@/components/milheiro-form";
 import { PageHeader } from "@/components/page-header";
+import { PersonalAgenda } from "@/components/personal-agenda";
+import { PomodoroTimer } from "@/components/pomodoro-timer";
 import { QuickCalculator } from "@/components/quick-calculator";
+import { ReadingControl } from "@/components/reading-control";
+import { QuoteGenerator } from "@/components/quote-generator";
 import { buildHistorySummary, calculateOption, sortOptionsByNetProfit } from "@/lib/calculations";
 import { exportHistoryToCSV, exportOptionsToCSV } from "@/lib/csv";
 import {
@@ -287,82 +293,103 @@ export default function Home() {
             }
           />
 
-          <PageHeader
-            bestOptionName={activeSummary.bestOption?.name ?? null}
-            bestOptionNetProfit={activeSummary.bestOption?.netProfit ?? 0}
-            optionsCount={activeSummary.optionsCount}
-            averageNetMargin={activeSummary.averageNetMargin}
-            totalNetProfit={activeSummary.totalNetProfit}
-            isFiltered={isFiltered}
-            visibleCount={filteredOptions.length}
-            totalCount={calculatedOptions.length}
-            themeMode={themeMode}
-            onToggleTheme={() =>
-              setThemeMode((current) => (current === "light" ? "dark" : "light"))
-            }
-          />
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <section className="space-y-6">
+              <PageHeader
+                bestOptionName={activeSummary.bestOption?.name ?? null}
+                bestOptionNetProfit={activeSummary.bestOption?.netProfit ?? 0}
+                optionsCount={activeSummary.optionsCount}
+                averageNetMargin={activeSummary.averageNetMargin}
+                totalNetProfit={activeSummary.totalNetProfit}
+                isFiltered={isFiltered}
+                visibleCount={filteredOptions.length}
+                totalCount={calculatedOptions.length}
+                themeMode={themeMode}
+                onToggleTheme={() =>
+                  setThemeMode((current) => (current === "light" ? "dark" : "light"))
+                }
+              />
 
-          <MilheiroForm
-            milePrices={milePrices}
-            onChange={(companyKey, value) =>
-              setMilePrices((current) => ({
-                ...current,
-                [companyKey]: toNumber(value),
-              }))
-            }
-          />
+              <MilheiroForm
+                milePrices={milePrices}
+                onChange={(companyKey, value) =>
+                  setMilePrices((current) => ({
+                    ...current,
+                    [companyKey]: toNumber(value),
+                  }))
+                }
+              />
 
-          <FilterBar
-            filters={filters}
-            visibleCount={filteredOptions.length}
-            totalCount={calculatedOptions.length}
-            onChange={(patch) =>
-              setFilters((current) => ({
-                ...current,
-                ...patch,
-              }))
-            }
-          />
+              <FilterBar
+                filters={filters}
+                visibleCount={filteredOptions.length}
+                totalCount={calculatedOptions.length}
+                onChange={(patch) =>
+                  setFilters((current) => ({
+                    ...current,
+                    ...patch,
+                  }))
+                }
+              />
 
-          <ActionBar
-            snapshotName={snapshotName}
-            onSnapshotNameChange={setSnapshotName}
-            onAddOption={handleAddOption}
-            onClearOptions={handleClearOptions}
-            onRestoreDefaults={handleRestoreDefaults}
-            onSaveHistory={handleSaveHistory}
-            onExportOptions={() => exportOptionsToCSV(filteredOptions)}
-            onExportHistory={() => exportHistoryToCSV(history)}
-            canSaveHistory={options.length > 0}
-            canExportOptions={filteredOptions.length > 0}
-            canExportHistory={history.length > 0}
-          />
+              <ActionBar
+                snapshotName={snapshotName}
+                onSnapshotNameChange={setSnapshotName}
+                onAddOption={handleAddOption}
+                onClearOptions={handleClearOptions}
+                onRestoreDefaults={handleRestoreDefaults}
+                onSaveHistory={handleSaveHistory}
+                onExportOptions={() => exportOptionsToCSV(filteredOptions)}
+                onExportHistory={() => exportHistoryToCSV(history)}
+                canSaveHistory={options.length > 0}
+                canExportOptions={filteredOptions.length > 0}
+                canExportHistory={history.length > 0}
+              />
 
-          <QuickCalculator
-            value={quickCalculator}
-            result={quickCalculatorResult}
-            onCompanyChange={(value) =>
-              setQuickCalculator((current) => ({
-                ...current,
-                company: value,
-              }))
-            }
-            onNumberChange={handleQuickCalculatorNumberChange}
-            onCommissionTypeChange={(value) =>
-              setQuickCalculator((current) => ({
-                ...current,
-                commissionType: value,
-              }))
-            }
-          />
+              <QuickCalculator
+                value={quickCalculator}
+                result={quickCalculatorResult}
+                onCompanyChange={(value) =>
+                  setQuickCalculator((current) => ({
+                    ...current,
+                    company: value,
+                  }))
+                }
+                onNumberChange={handleQuickCalculatorNumberChange}
+                onCommissionTypeChange={(value) =>
+                  setQuickCalculator((current) => ({
+                    ...current,
+                    commissionType: value,
+                  }))
+                }
+              />
 
-          <HistorySection
-            history={history}
-            onRestore={handleRestoreSnapshot}
-            onRemove={handleRemoveSnapshot}
-          />
+              <HistorySection
+                history={history}
+                onRestore={handleRestoreSnapshot}
+                onRemove={handleRemoveSnapshot}
+              />
 
-          <FormulaSection />
+              <FormulaSection />
+            </section>
+
+            <aside className="space-y-4 xl:sticky xl:top-4 xl:self-start">
+              <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/80">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                  Sidebar de ferramentas
+                </p>
+                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                  O foco principal continua no calculo de milhas. As opcoes abaixo sao extras.
+                </p>
+              </div>
+              <QuoteGenerator />
+              <PersonalAgenda />
+              <PomodoroTimer />
+              <ReadingControl />
+              <MedicationsAgenda />
+              <FuelConsumption />
+            </aside>
+          </div>
         </div>
       </div>
     </main>
