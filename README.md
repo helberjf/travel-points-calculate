@@ -1,200 +1,69 @@
-# Calculadora de Milhas
+# Travel Points Calculator
 
-Aplicação web em Next.js para operação de venda de passagens emitidas com milhas.
+A Next.js and TypeScript workspace for comparing flight redemptions and sales scenarios. Enter mileage costs, cash fees, sale prices and commissions to compare calculated net profit, save local snapshots and export CSV files.
 
-O projeto permite comparar múltiplas emissões, calcular custo das milhas, custo total, lucro bruto, comissão, lucro líquido, margens, venda mínima, aplicar filtros, salvar snapshots locais e exportar dados em CSV.
+The calculator uses user-supplied values and sample defaults. It is not a live airline pricing or booking system.
 
-## Principais funcionalidades
+## Try a comparison
 
-- edição do valor do milheiro por companhia aérea
-- múltiplas opções de emissão com comparação automática
-- ranking ordenado por maior lucro líquido
-- destaque visual para a melhor opção atual
-- filtros por companhia, nome e status financeiro
-- calculadora rápida separada do comparador
-- histórico local com snapshots restauráveis
-- exportação de opções atuais para CSV
-- exportação do histórico para CSV
-- persistência automática em `localStorage`
-- restauração de dados padrão
-- limpeza de todas as opções
-- fórmulas exibidas na interface
+1. Set the price per thousand miles for each airline.
+2. Add two redemption options with their mileage, fees, sale amount and commission.
+3. Compare the ranking, which sorts by net profit, then net margin and total cost.
+4. Save a snapshot, change an input, restore the snapshot and export the options or history to CSV.
 
-## Tecnologias usadas
+For example, **10,000 miles at R$20 per thousand**, a **R$50 fee**, a **R$300 sale** and a **R$10 fixed commission** produce R$200 mileage cost, R$250 total cost and R$40 calculated net profit. This is a synthetic example, not a fare quote.
 
-- Next.js `16.2.2`
-- React `19.2.4`
-- TypeScript
-- App Router
-- Tailwind CSS `4`
+## Calculation model
 
-## Estrutura de pastas
+The functions live in [lib/calculations.ts](lib/calculations.ts):
 
-```text
-calculadora-milhas/
-├─ app/
-│  ├─ favicon.ico
-│  ├─ globals.css
-│  ├─ layout.tsx
-│  └─ page.tsx
-├─ components/
-│  ├─ action-bar.tsx
-│  ├─ empty-state.tsx
-│  ├─ filter-bar.tsx
-│  ├─ formula-section.tsx
-│  ├─ history-section.tsx
-│  ├─ milheiro-form.tsx
-│  ├─ option-form-card.tsx
-│  ├─ options-list.tsx
-│  ├─ page-header.tsx
-│  ├─ quick-calculator.tsx
-│  ├─ ranking-list.tsx
-│  └─ summary-cards.tsx
-├─ lib/
-│  ├─ calculations.ts
-│  ├─ constants.ts
-│  ├─ csv.ts
-│  ├─ defaults.ts
-│  ├─ filters.ts
-│  ├─ formatters.ts
-│  └─ storage.ts
-├─ types/
-│  └─ index.ts
-├─ .gitignore
-├─ eslint.config.mjs
-├─ next-env.d.ts
-├─ next.config.ts
-├─ package-lock.json
-├─ package.json
-├─ postcss.config.mjs
-├─ README.md
-└─ tsconfig.json
-```
+| Value | Formula |
+| --- | --- |
+| Mileage cost | `(miles / 1000) * pricePerThousand` |
+| Total cost | `mileageCost + cashFees` |
+| Gross profit | `saleAmount - totalCost` |
+| Commission | Fixed amount, or `saleAmount * percentage / 100` |
+| Net profit | `grossProfit - commission` |
+| Net margin | `netProfit / saleAmount * 100` when sale amount is positive |
 
-## Como instalar
+The current `calculateBreakevenSale` returns **total cost only**. It does not include commission, so its displayed minimum-sale value is not a full commission-adjusted break-even figure.
+
+## Run locally
+
+Use Node.js **22.12+** so the test command's TypeScript-stripping flag and the Next.js toolchain are available.
 
 ```bash
-npm install
-```
-
-## Como rodar
-
-```bash
+git clone https://github.com/helberjf/travel-points-calculate.git
+cd travel-points-calculate
+npm ci
 npm run dev
 ```
 
-Abra `http://localhost:3000`.
+Open `http://localhost:3000`.
 
-## Persistência local
+```bash
+npm test
+npm run lint
+npm run build
+```
 
-O projeto salva automaticamente no `localStorage`:
+The root test suite currently covers navigation behavior; it is not a complete financial-calculation regression suite. A production build can be served with `npm start`.
 
-- valores dos milheiros
-- opções de emissão
-- calculadora rápida
-- filtros
-- histórico de snapshots
+## Source and companion tool
 
-Ao abrir a aplicação, os dados salvos são recarregados. Se não houver dados prévios, a interface inicia com os valores padrão do projeto.
+- [app/page.tsx](app/page.tsx): comparison workspace and state orchestration.
+- [lib/calculations.ts](lib/calculations.ts), [lib/filters.ts](lib/filters.ts): calculations and filtering.
+- [lib/storage.ts](lib/storage.ts), [lib/csv.ts](lib/csv.ts): browser persistence and exports.
+- [components](components): comparison, quick calculator, quotation, history and fuel-consumption UI.
+- [docs/interface-de-viagens.md](docs/interface-de-viagens.md): interface notes in Portuguese.
 
-## Exportação CSV
+The separate [flight-research companion](pesquisa-passagens/README.md) has its own local workflow and tests. Its Windows launcher, `pesquisa-passagens/Iniciar Milhas.cmd`, opens the research form/report environment. It is separate from the main Next.js deployment.
 
-A exportação é feita no front-end, sem bibliotecas externas, usando `Blob` e download automático.
+## Design tradeoffs
 
-### Exportação de opções
+- **Local persistence:** snapshots and inputs remain available without accounts or a backend, but depend on the browser/device and can be lost when browser data is cleared. CSV provides a portable export.
+- **Explicit formulas:** separate pure functions make the model inspectable; JavaScript number arithmetic and the simplified minimum-sale formula are not a full accounting system.
+- **Manual price inputs:** users can compare scenarios immediately, while price freshness and completeness remain their responsibility rather than an external feed guarantee.
+- **Separate research companion:** local research can evolve without redeploying the calculator, but has its own runtime, data and operational steps.
 
-O CSV das opções inclui:
-
-- nome
-- companhia
-- milhas
-- valor do milheiro
-- custo das milhas
-- taxa
-- custo total
-- venda
-- tipo de comissão
-- comissão informada
-- comissão em reais
-- lucro bruto
-- lucro líquido
-- margem bruta
-- margem líquida
-- venda mínima
-
-### Exportação de histórico
-
-O CSV do histórico inclui:
-
-- id do snapshot
-- nome do snapshot
-- data/hora
-- quantidade de opções
-- melhor opção
-- lucro líquido total
-- margem líquida média
-
-## Fórmulas usadas
-
-- `custo das milhas = (milhas / 1000) * valor do milheiro`
-- `custo total = custo das milhas + taxa`
-- `lucro bruto = venda - custo total`
-- `comissão em reais`
-  - `fixed`: valor informado
-  - `percent`: `(venda * percentual) / 100`
-- `lucro líquido = lucro bruto - comissão em reais`
-- `margem bruta = (lucro bruto / venda) * 100`, quando `venda > 0`
-- `margem líquida = (lucro líquido / venda) * 100`, quando `venda > 0`
-- `venda mínima = custo total`
-
-## Dados iniciais
-
-### Milheiros
-
-- `smiles = 16`
-- `latam = 26`
-- `azul = 18`
-- `outro = 0`
-
-### Opções iniciais
-
-1. `Opção 1`
-   - companhia: `smiles`
-   - milhas: `46000`
-   - taxa: `0`
-   - venda: `800`
-   - comissão: fixa `0`
-
-2. `Opção 2`
-   - companhia: `smiles`
-   - milhas: `8280`
-   - taxa: `690`
-   - venda: `800`
-   - comissão: fixa `0`
-
-3. `Opção 3`
-   - companhia: `latam`
-   - milhas: `24183`
-   - taxa: `50`
-   - venda: `800`
-   - comissão: fixa `0`
-
-### Calculadora rápida
-
-- companhia: `latam`
-- milhas: `0`
-- taxa: `0`
-- venda: `0`
-- comissão: fixa `0`
-
-## Pesquisa de passagens com pontos
-
-A ferramenta local completa está em [pesquisa-passagens](pesquisa-passagens/README.md). Abra `pesquisa-passagens/Iniciar Milhas.cmd` para usar o formulário, gerar o roteiro para o ChatGPT e consultar o relatório. A ferramenta usa os valores por milheiro informados no formulário para estimar o custo dos resgates em reais. Consulte a documentação da subpasta para atualizar as cotações, registrar novas pesquisas e gerar novamente o relatório. A execução local não exige publicar alterações na calculadora.
-
-## Melhorias futuras
-
-- agrupamento de histórico por cliente ou rota
-- exportação PDF
-- cenários com ida e volta separadas
-- importação CSV
-- autenticação e sincronização em nuvem
+Cloud synchronization, CSV import and a full PDF export remain future extensions unless implemented in a subsequent revision.
